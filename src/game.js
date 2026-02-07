@@ -214,13 +214,14 @@ export function mountGame(app, { caseId = 1 } = {}) {
           {
             class: `suspectCard ${active ? 'active' : ''}`,
             onClick: () => {
-              if (state.phase !== 'interviews') {
-                state.lastFeedback = 'Interviews happen in the Interviews phase.'
-                render()
-                return
-              }
+              // Always allow selecting to "preview" who you'll talk to.
+              // Actual interview interaction happens in the Interviews phase.
               state.currentSuspectId = s.id
-              state.lastFeedback = null
+              if (state.phase !== 'interviews') {
+                state.lastFeedback = 'Suspect selected. Advance to the Interviews phase to question them.'
+              } else {
+                state.lastFeedback = null
+              }
               render()
             },
           },
@@ -243,12 +244,18 @@ export function mountGame(app, { caseId = 1 } = {}) {
   function renderBottomBar() {
     const bottom = el('footer', { class: 'bottombar' })
 
+    const quickFeedback = state.lastFeedback
+      ? el('div', { class: 'quickFeedback' }, state.lastFeedback)
+      : el('div', { class: 'quickFeedback muted' }, 'Tip: Tap Next to advance phases. Complete minigames to earn points for tools.')
+
     bottom.appendChild(
       el('div', { class: 'points' }, [
         el('div', { class: 'pointsLabel' }, 'Investigation Points'),
         el('div', { class: 'pointsValue' }, `${remainingPoints()} (earned: ${state.invPoints})`),
       ])
     )
+
+    bottom.appendChild(quickFeedback)
 
     const tools = el('div', { class: 'tools' })
     tools.appendChild(el('div', { class: 'toolsLabel' }, 'Tools'))
@@ -676,14 +683,7 @@ export function mountGame(app, { caseId = 1 } = {}) {
     shell.appendChild(main)
     shell.appendChild(renderBottomBar())
 
-    // Landscape enforcement (gentle): show overlay if portrait.
-    const overlay = el('div', { class: 'rotateOverlay', id: 'rotateOverlay' }, [
-      el('div', { class: 'rotateCard' }, [
-        el('h2', {}, 'Rotate your phone'),
-        el('p', { class: 'muted' }, 'This game is designed for landscape mode.'),
-      ]),
-    ])
-    shell.appendChild(overlay)
+    // Portrait mode is supported.
 
     app.appendChild(shell)
   }
